@@ -6,6 +6,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Input;
+using System.Linq;
 
 namespace Wereldvlaggen
 {
@@ -17,6 +18,8 @@ namespace Wereldvlaggen
         private static readonly DirectoryInfo FLAGS_DIR = new DirectoryInfo("flags");
 
         private List<Flag> flags;
+
+        private List<Flag> practiceFlags;
         private Flag practiceFlag;
         private Random random;
         private int correct, incorrect;
@@ -24,11 +27,35 @@ namespace Wereldvlaggen
         public MainWindow()
         {
             InitializeComponent();
+            flags = new List<Flag>();
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            LoadFlags();
+            // Maak een List van alle vlaggen en toon een Image met die vlag
+            // en een Label met de naam van dat land.
+            FileInfo[] flagFiles = FLAGS_DIR.GetFiles();
+            foreach (FileInfo flagFile in flagFiles)
+            {
+                Flag flag = new Flag(flagFile);
+                flags.Add(flag);
+
+                StackPanel stackPanel = new StackPanel();
+                stackPanel.Margin = new Thickness(10);
+
+                Image image = new Image();
+                image.Source = flag.Image;
+                image.Width = 100;
+                image.Height = 75;
+                stackPanel.Children.Add(image);
+
+                Label label = new Label();
+                label.HorizontalAlignment = HorizontalAlignment.Center;
+                label.Content = flag.CountryName;
+                stackPanel.Children.Add(label);
+
+                wrapPanel.Children.Add(stackPanel);
+            }
         }
 
         private void button_Click(object sender, RoutedEventArgs e)
@@ -40,6 +67,10 @@ namespace Wereldvlaggen
                 label.Content = "";
                 button.Content = "Stop";
 
+                // Maak een copy van de flags list zodat we tijdens het oefenen elementen uit die
+                // kopie kunnen verwijderen en dat de oorspronkelijke lijst hetzelfde blijft,
+                // mocht de gebruiker gaan stoppen met oefenen en daarna weer opnieuw beginnen.
+                practiceFlags = flags.ToList();
                 random = new Random();
                 correct = incorrect = 0;
                 Practice();
@@ -84,7 +115,7 @@ namespace Wereldvlaggen
                 "Aantal fout: " + incorrect;
             label.Content += Environment.NewLine + result;
 
-            if (flags.Count > 0)
+            if (practiceFlags.Count > 0)
             {
                 Practice();
             }
@@ -96,37 +127,10 @@ namespace Wereldvlaggen
             }
         }
 
-        private void LoadFlags()
-        {
-            flags = new List<Flag>();
-            FileInfo[] flagFiles = FLAGS_DIR.GetFiles();
-            foreach (FileInfo flagFile in flagFiles)
-            {
-                Flag flag = new Flag(flagFile);
-                flags.Add(flag);
-
-                StackPanel stackPanel = new StackPanel();
-                stackPanel.Margin = new Thickness(10);
-
-                Image image = new Image();
-                image.Source = flag.Image;
-                image.Width = 100;
-                image.Height = 75;
-                stackPanel.Children.Add(image);
-
-                Label label = new Label();
-                label.HorizontalAlignment = HorizontalAlignment.Center;
-                label.Content = flag.CountryName;
-                stackPanel.Children.Add(label);
-
-                wrapPanel.Children.Add(stackPanel);
-            }
-        }
-
         private void Practice()
         {
-            practiceFlag = flags[random.Next(0, flags.Count)];
-            flags.Remove(practiceFlag);
+            practiceFlag = practiceFlags[random.Next(0, practiceFlags.Count)];
+            practiceFlags.Remove(practiceFlag);
 
             image.Source = practiceFlag.Image;
             textBox.Text = "";
@@ -135,9 +139,6 @@ namespace Wereldvlaggen
 
         private void StopPractice()
         {
-            wrapPanel.Children.Clear();
-            LoadFlags();
-
             scrollViewer.Visibility = Visibility.Visible;
             stackPanel.Visibility = Visibility.Collapsed;
             button.Content = "Oefenen";
