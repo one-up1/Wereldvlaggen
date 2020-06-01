@@ -1,17 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
+using System.Windows.Input;
 
 namespace Wereldvlaggen
 {
@@ -20,9 +14,155 @@ namespace Wereldvlaggen
     /// </summary>
     public partial class MainWindow : Window
     {
+        private static readonly DirectoryInfo FLAGS_DIR = new DirectoryInfo("flags");
+
+        private List<Flag> flags;
+        private Flag practiceFlag;
+        private Random random;
+        private int correct, incorrect;
+
         public MainWindow()
         {
             InitializeComponent();
+        }
+
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            LoadFlags();
+        }
+
+        private void button_Click(object sender, RoutedEventArgs e)
+        {
+            if (scrollViewer.IsVisible)
+            {
+                scrollViewer.Visibility = Visibility.Collapsed;
+                stackPanel.Visibility = Visibility.Visible;
+                label.Content = "";
+                button.Content = "Stop";
+
+                random = new Random();
+                correct = incorrect = 0;
+                Practice();
+            }
+            else
+            {
+                StopPractice();
+            }
+        }
+        private void textBox_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                bNext_Click(sender, e);
+            }
+        }
+
+        private void bNext_Click(object sender, RoutedEventArgs e)
+        {
+            if (textBox.Text.Length == 0)
+            {
+                // Niks invullen betekent "Ik weet het niet".
+                label.Content = "Dat was: " + practiceFlag.CountryName;
+                label.Foreground = Brushes.Black;
+                incorrect++;
+            }
+            else if (textBox.Text.ToLower() == practiceFlag.CountryName.ToLower())
+            {
+                correct++;
+                label.Content = "Goed!";
+                label.Foreground = Brushes.Green;
+            }
+            else
+            {
+                incorrect++;
+                label.Content = "Fout! Het juiste antwoord was: " + practiceFlag.CountryName;
+                label.Foreground = Brushes.Red;
+            }
+
+            string result =
+                "Aantal goed: " + correct + Environment.NewLine +
+                "Aantal fout: " + incorrect;
+            label.Content += Environment.NewLine + result;
+
+            if (flags.Count > 0)
+            {
+                Practice();
+            }
+            else
+            {
+                StopPractice();
+                MessageBox.Show(result, "Resultaat",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+        }
+
+        private void LoadFlags()
+        {
+            flags = new List<Flag>();
+            FileInfo[] flagFiles = FLAGS_DIR.GetFiles();
+            foreach (FileInfo flagFile in flagFiles)
+            {
+                Flag flag = new Flag(flagFile);
+                flags.Add(flag);
+
+                StackPanel stackPanel = new StackPanel();
+                stackPanel.Margin = new Thickness(10);
+
+                Image image = new Image();
+                image.Source = flag.Image;
+                image.Width = 100;
+                image.Height = 75;
+                stackPanel.Children.Add(image);
+
+                Label label = new Label();
+                label.HorizontalAlignment = HorizontalAlignment.Center;
+                label.Content = flag.CountryName;
+                stackPanel.Children.Add(label);
+
+                wrapPanel.Children.Add(stackPanel);
+            }
+        }
+
+        private void Practice()
+        {
+            practiceFlag = flags[random.Next(0, flags.Count)];
+            flags.Remove(practiceFlag);
+
+            image.Source = practiceFlag.Image;
+            textBox.Text = "";
+            textBox.Focus();
+        }
+
+        private void StopPractice()
+        {
+            wrapPanel.Children.Clear();
+            LoadFlags();
+
+            scrollViewer.Visibility = Visibility.Visible;
+            stackPanel.Visibility = Visibility.Collapsed;
+            button.Content = "Oefenen";
+        }
+
+        private class Flag
+        {
+            private ImageSource image;
+            private String countryName;
+
+            public Flag(FileInfo fileInfo)
+            {
+                image = new BitmapImage(new Uri(fileInfo.FullName));
+                countryName = Path.GetFileNameWithoutExtension(fileInfo.FullName);
+            }
+
+            public ImageSource Image
+            {
+                get { return image; }
+            }
+
+            public String CountryName
+            {
+                get { return countryName; }
+            }
         }
     }
 }
