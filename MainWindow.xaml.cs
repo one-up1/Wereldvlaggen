@@ -56,6 +56,7 @@ namespace Wereldvlaggen
 
                 wrapPanel.Children.Add(stackPanel);
             }
+            Console.WriteLine("Loaded " + flags.Count + " flags");
         }
 
         private void button_Click(object sender, RoutedEventArgs e)
