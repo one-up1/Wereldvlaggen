@@ -32,31 +32,41 @@ namespace Wereldvlaggen
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            // Maak een List van alle vlaggen en toon een Image met die vlag
-            // en een Label met de naam van dat land.
-            FileInfo[] flagFiles = FLAGS_DIR.GetFiles();
-            foreach (FileInfo flagFile in flagFiles)
+            try
             {
-                Flag flag = new Flag(flagFile);
-                flags.Add(flag);
+                // Maak een List van alle vlaggen en toon een Image met die vlag
+                // en een Label met de naam van dat land.
+                FileInfo[] flagFiles = FLAGS_DIR.GetFiles();
+                foreach (FileInfo flagFile in flagFiles)
+                {
+                    Flag flag = new Flag(flagFile);
+                    flags.Add(flag);
 
-                StackPanel stackPanel = new StackPanel();
-                stackPanel.Margin = new Thickness(10);
+                    StackPanel stackPanel = new StackPanel();
+                    stackPanel.Margin = new Thickness(10);
 
-                Image image = new Image();
-                image.Source = flag.Image;
-                image.Width = 100;
-                image.Height = 75;
-                stackPanel.Children.Add(image);
+                    Image image = new Image();
+                    image.Source = flag.Image;
+                    image.Width = 100;
+                    image.Height = 75;
+                    stackPanel.Children.Add(image);
 
-                Label label = new Label();
-                label.HorizontalAlignment = HorizontalAlignment.Center;
-                label.Content = flag.CountryName;
-                stackPanel.Children.Add(label);
+                    Label label = new Label();
+                    label.HorizontalAlignment = HorizontalAlignment.Center;
+                    label.Content = flag.CountryName;
+                    stackPanel.Children.Add(label);
 
-                wrapPanel.Children.Add(stackPanel);
+                    wrapPanel.Children.Add(stackPanel);
+                }
+                Console.WriteLine("Loaded " + flags.Count + " flags");
             }
-            Console.WriteLine("Loaded " + flags.Count + " flags");
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                MessageBox.Show("Kan de vlaggen niet laden", "Fout",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+                Close();
+            }
         }
 
         private void button_Click(object sender, RoutedEventArgs e)
